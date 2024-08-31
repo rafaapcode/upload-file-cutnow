@@ -8,7 +8,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rafaapcode/upload-file-cutnow/internal/controllers/barbers"
 	"github.com/rafaapcode/upload-file-cutnow/internal/controllers/barbershop"
-	"github.com/rafaapcode/upload-file-cutnow/internal/middlewares"
 )
 
 func init() {
@@ -23,7 +22,7 @@ func main() {
 	}))
 	e.Use(middleware.Recover())
 
-	e.Use(middlewares.AuthMiddleware)
+	// e.Use(middlewares.AuthMiddleware)
 
 	e.GET("/",
 		func(c echo.Context) error {

@@ -3,6 +3,7 @@ package aws_s3
 import (
 	"fmt"
 	"mime/multipart"
+	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -31,11 +32,11 @@ func UploadSingleFile(bucketName, filepath string, file multipart.File) error {
 		fmt.Println(err.Error())
 		return err
 	}
-
 	return nil
 }
 
-func UploadMultipleFiles(bucketName, filepath string, files []multipart.File) error {
+func UploadMultipleFile(bucketName, filepath string, file multipart.File, wg *sync.WaitGroup) error {
+	defer wg.Done()
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("us-east-1"),
 	})
@@ -50,13 +51,12 @@ func UploadMultipleFiles(bucketName, filepath string, files []multipart.File) er
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(filepath),
-		Body:   files[0],
+		Body:   file,
 	})
 
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
 	}
-
 	return nil
 }
