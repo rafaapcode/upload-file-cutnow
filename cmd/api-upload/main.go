@@ -1,22 +1,34 @@
 package main
 
 import (
+	"net/http"
 	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rafaapcode/upload-file-cutnow/internal/controllers/barbers"
 	"github.com/rafaapcode/upload-file-cutnow/internal/controllers/barbershop"
+	"github.com/rafaapcode/upload-file-cutnow/internal/middlewares"
 )
 
 func init() {
-	os.Setenv("PORT", ":3001")
+	os.Setenv("PORT", ":3002")
+	os.Setenv("SECRET", "3d5af22c0142b5711b81dd51712d6454aa2e0870a5309128c0c77039b65fa94a")
 }
 
 func main() {
 	e := echo.New()
-	e.Use(middleware.Logger())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "method=${method}, uri=${uri}, status=${status}\n",
+	}))
 	e.Use(middleware.Recover())
+
+	e.Use(middlewares.AuthMiddleware)
+
+	e.GET("/",
+		func(c echo.Context) error {
+			return c.String(http.StatusOK, "Banner upload")
+		})
 
 	e.POST("/barbershop/logo", barbershop.LogoUpload)
 	e.POST("/barbershop/banner", barbershop.BannerUpload)
