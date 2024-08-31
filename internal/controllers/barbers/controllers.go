@@ -91,7 +91,7 @@ func PortfolioUpload(c echo.Context) error {
 
 		defer src.Close()
 		filePath := fmt.Sprintf("barbershop/%s/banner-%s", id, file.Filename)
-		aws_s3.UploadMultipleFile("cutnow-images", filePath, src, wg)
+		aws_s3.UploadMultipleFile("cutnow-images", filePath, src)
 	}
 	wg.Wait()
 
