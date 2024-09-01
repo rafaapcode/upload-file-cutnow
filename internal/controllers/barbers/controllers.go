@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	aws_s3 "github.com/rafaapcode/upload-file-cutnow/pkg/aws"
+	database_pkg "github.com/rafaapcode/upload-file-cutnow/pkg/mongo"
 	controller_response "github.com/rafaapcode/upload-file-cutnow/types"
 )
 
@@ -31,8 +32,19 @@ func BannerUpload(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado ao abrir o arquivo.", Error: err})
 	}
 	defer src.Close()
+
+	client := database_pkg.Connect()
+	defer database_pkg.Disconnect(client)
+
 	filePath := fmt.Sprintf("barber/%s/banner-%s", id, file.Filename)
 	aws_s3.UploadSingleFile("cutnow-images", filePath, src)
+
+	_, err = database_pkg.UpdateBarberBanner(client, id, filePath)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado ao inserir o arquivo no Banco de dados.", Error: err})
+	}
+
 	return c.JSON(http.StatusCreated, controller_response.Response{Status: true, Message: "Banner uploaded with Successful !", Error: nil})
 }
 
@@ -57,8 +69,19 @@ func FotoUpload(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado ao abrir o arquivo.", Error: err})
 	}
 	defer src.Close()
+
+	client := database_pkg.Connect()
+	defer database_pkg.Disconnect(client)
+
 	filePath := fmt.Sprintf("barber/%s/foto-%s", id, file.Filename)
 	aws_s3.UploadSingleFile("cutnow-images", filePath, src)
+
+	_, err = database_pkg.UpdateBarberFoto(client, id, filePath)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado ao inserir o arquivo no Banco de dados.", Error: err})
+	}
+
 	return c.JSON(http.StatusCreated, controller_response.Response{Status: true, Message: "Foto uploaded with Successful !", Error: nil})
 }
 
@@ -79,6 +102,11 @@ func PortfolioUpload(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Você pode enviar no máximo 15 imagens", Error: err})
 	}
 
+	var filepaths []string
+
+	client := database_pkg.Connect()
+	defer database_pkg.Disconnect(client)
+
 	for _, fileheaders := range form.File {
 		file := fileheaders[0]
 
@@ -92,7 +120,14 @@ func PortfolioUpload(c echo.Context) error {
 
 		defer src.Close()
 		filePath := fmt.Sprintf("barber/%s/potfolio-%s", id, file.Filename)
+		filepaths = append(filepaths, filePath)
 		go aws_s3.UploadMultipleFile("cutnow-images", filePath, src)
+	}
+
+	_, err = database_pkg.UpdateBarberPotfolio(client, id, filepaths)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado ao inserir o arquivo no Banco de dados.", Error: err})
 	}
 
 	return c.JSON(http.StatusCreated, controller_response.Response{Status: true, Message: "Portfolio photos uploaded with Successful !", Error: nil})

@@ -68,8 +68,19 @@ func LogoUpload(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado ao abrir o arquivo.", Error: err})
 	}
 	defer src.Close()
+
+	client := database_pkg.Connect()
+	defer database_pkg.Disconnect(client)
+
 	filePath := fmt.Sprintf("barbershop/%s/logo-%s", id, file.Filename)
 	aws_s3.UploadSingleFile("cutnow-images", filePath, src)
+
+	_, err = database_pkg.UpdateBarbershopLogo(client, id, filePath)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado ao inserir o arquivo no Banco de dados.", Error: err})
+	}
+
 	return c.JSON(http.StatusCreated, controller_response.Response{Status: true, Message: "Logo uploaded with Successful !", Error: nil})
 }
 
@@ -90,6 +101,11 @@ func StructureUpload(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Você pode enviar no máximo 6 imagens", Error: err})
 	}
 
+	client := database_pkg.Connect()
+	defer database_pkg.Disconnect(client)
+
+	var filepaths []string
+
 	for _, fileheaders := range form.File {
 
 		file := fileheaders[0]
@@ -107,7 +123,15 @@ func StructureUpload(c echo.Context) error {
 
 		defer src.Close()
 		filePath := fmt.Sprintf("barbershop/%s/structure-%s", id, file.Filename)
+		filepaths = append(filepaths, filePath)
 		go aws_s3.UploadMultipleFile("cutnow-images", filePath, src)
 	}
+
+	_, err = database_pkg.UpdateBarbershopStructure(client, id, filepaths)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado ao inserir o arquivo no Banco de dados.", Error: err})
+	}
+
 	return c.JSON(http.StatusCreated, controller_response.Response{Status: true, Message: "Structure photos uploaded with Successful!", Error: nil})
 }

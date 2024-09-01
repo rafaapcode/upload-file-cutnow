@@ -34,20 +34,27 @@ func Disconnect(client *mongo.Client) {
 	}
 }
 
-func UpdateBarberBanner(client *mongo.Client, id string, pathToBanner string) *mongo.UpdateResult {
+func UpdateBarberBanner(client *mongo.Client, hexId string, pathToBanner string) (*mongo.UpdateResult, error) {
 	bannerUrl := fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathToBanner)
+	coll := client.Database("cutnow").Collection("Barbeiro")
+	id, err := primitive.ObjectIDFromHex(hexId)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
 
 	filter := bson.D{{"_id", id}}
 	update := bson.D{{"$set", bson.D{{"informacoes.banner", bannerUrl}}}}
 
-	result, err := client.Database("cutnow").Collection("Barbeiro").UpdateByID(context.TODO(), filter, update)
+	result, err := coll.UpdateOne(context.TODO(), filter, update)
 
 	if err != nil {
 		fmt.Println(err.Error())
-		panic("Erro ao atualizar o banner no Banco de dados")
+		return nil, err
 	}
 
-	return result
+	return result, nil
 }
 
 func UpdateBarbershopBanner(client *mongo.Client, hexId string, pathToBanner string) (*mongo.UpdateResult, error) {
@@ -72,74 +79,105 @@ func UpdateBarbershopBanner(client *mongo.Client, hexId string, pathToBanner str
 	return result, nil
 }
 
-func UpdateBarberFoto(client *mongo.Client, id string, pathToFoto string) *mongo.UpdateResult {
+func UpdateBarberFoto(client *mongo.Client, hexId string, pathToFoto string) (*mongo.UpdateResult, error) {
 	fotoUrl := fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathToFoto)
+	coll := client.Database("cutnow").Collection("Barbeiro")
+
+	id, err := primitive.ObjectIDFromHex(hexId)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
 
 	filter := bson.D{{"_id", id}}
 	update := bson.D{{"$set", bson.D{{"informacoes.foto", fotoUrl}}}}
 
-	result, err := client.Database("cutnow").Collection("Barbeiro").UpdateByID(context.TODO(), filter, update)
+	result, err := coll.UpdateOne(context.TODO(), filter, update)
 
 	if err != nil {
 		fmt.Println(err.Error())
-		panic("Erro ao atualizar o banner no Banco de dados")
+		return nil, err
 	}
 
-	return result
+	return result, nil
 }
 
-func UpdateBarbershopLogo(client *mongo.Client, id string, pathToLogo string) *mongo.UpdateResult {
+func UpdateBarbershopLogo(client *mongo.Client, hexId string, pathToLogo string) (*mongo.UpdateResult, error) {
 	logoUrl := fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathToLogo)
+	coll := client.Database("cutnow").Collection("Barbearia")
+	id, err := primitive.ObjectIDFromHex(hexId)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
 
 	filter := bson.D{{"_id", id}}
 	update := bson.D{{"$set", bson.D{{"informacoes.logo", logoUrl}}}}
 
-	result, err := client.Database("cutnow").Collection("Barbearia").UpdateByID(context.TODO(), filter, update)
+	result, err := coll.UpdateOne(context.TODO(), filter, update)
 
 	if err != nil {
 		fmt.Println(err.Error())
-		panic("Erro ao atualizar o banner no Banco de dados")
+		return nil, err
 	}
 
-	return result
+	return result, nil
 }
 
-func UpdateBarberPotfolio(client *mongo.Client, id string, pathToPortfolio []string) *mongo.UpdateResult {
+func UpdateBarberPotfolio(client *mongo.Client, hexId string, pathToPortfolio []string) (*mongo.UpdateResult, error) {
 	var portfolioUrls []string
 
 	for _, pathPotfolio := range pathToPortfolio {
 		portfolioUrls = append(portfolioUrls, fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathPotfolio))
 	}
 
-	filter := bson.D{{"_id", id}}
-	update := bson.D{{"$set", bson.D{{"informacoes.portfolio", portfolioUrls}}}}
-
-	result, err := client.Database("cutnow").Collection("Barbeiro").UpdateByID(context.TODO(), filter, update)
+	coll := client.Database("cutnow").Collection("Barbeiro")
+	id, err := primitive.ObjectIDFromHex(hexId)
 
 	if err != nil {
 		fmt.Println(err.Error())
-		panic("Erro ao atualizar o banner no Banco de dados")
+		return nil, err
 	}
 
-	return result
+	filter := bson.D{{"_id", id}}
+	update := bson.D{{"$set", bson.D{{"informacoes.portfolio", portfolioUrls}}}}
+
+	result, err := coll.UpdateOne(context.TODO(), filter, update)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	return result, nil
 }
 
-func UpdateBarbershopStructure(client *mongo.Client, id string, pathToStructure []string) *mongo.UpdateResult {
+func UpdateBarbershopStructure(client *mongo.Client, hexId string, pathToStructure []string) (*mongo.UpdateResult, error) {
 	var structureUrls []string
 
 	for _, pathStrucure := range pathToStructure {
 		structureUrls = append(structureUrls, fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathStrucure))
 	}
 
-	filter := bson.D{{"_id", id}}
-	update := bson.D{{"$set", bson.D{{"informacoes.fotosEstruturaBarbearia", structureUrls}}}}
-
-	result, err := client.Database("cutnow").Collection("Barbearia").UpdateByID(context.TODO(), filter, update)
+	coll := client.Database("cutnow").Collection("Barbearia")
+	id, err := primitive.ObjectIDFromHex(hexId)
 
 	if err != nil {
 		fmt.Println(err.Error())
-		panic("Erro ao atualizar o banner no Banco de dados")
+		return nil, err
 	}
 
-	return result
+	filter := bson.D{{"_id", id}}
+	update := bson.D{{"$set", bson.D{{"informacoes.fotosEstruturaBarbearia", structureUrls}}}}
+
+	result, err := coll.UpdateOne(context.TODO(), filter, update)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	return result, nil
 }
