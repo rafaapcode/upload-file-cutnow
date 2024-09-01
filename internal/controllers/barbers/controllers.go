@@ -75,6 +75,10 @@ func PortfolioUpload(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado , tente novamente.", Error: err})
 	}
 
+	if len(form.File) > 16 {
+		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Você pode enviar no máximo 15 imagens", Error: err})
+	}
+
 	for _, fileheaders := range form.File {
 		file := fileheaders[0]
 
