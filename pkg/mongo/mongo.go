@@ -11,6 +11,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+type Database struct {
+	Client *mongo.Client
+	HexId  string
+}
+
 func Connect() *mongo.Client {
 	opts := options.Client().ApplyURI(os.Getenv("MONGODB_URI"))
 	client, err := mongo.Connect(context.TODO(), opts)
@@ -28,48 +33,50 @@ func Connect() *mongo.Client {
 	return client
 }
 
-func Disconnect(client *mongo.Client) {
-	if err := client.Disconnect(context.TODO()); err != nil {
+func (db Database) handleAndUpdateData(pathToImage, collectioName, fieldToUpdate string) (*mongo.UpdateResult, error) {
+	bannerUrl := fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathToImage)
+	coll := db.Client.Database("cutnow").Collection(collectioName)
+	id, err := primitive.ObjectIDFromHex(db.HexId)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	filter := bson.D{{"_id", id}}
+	update := bson.D{{"$set", bson.D{{fieldToUpdate, bannerUrl}}}}
+
+	result, err := coll.UpdateOne(context.TODO(), filter, update)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (db Database) Disconnect() {
+	if err := db.Client.Disconnect(context.TODO()); err != nil {
 		panic(err)
 	}
 }
 
-func UpdateBarberBanner(client *mongo.Client, hexId string, pathToBanner string) (*mongo.UpdateResult, error) {
-	bannerUrl := fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathToBanner)
-	coll := client.Database("cutnow").Collection("Barbeiro")
-	id, err := primitive.ObjectIDFromHex(hexId)
+func (db Database) UpdateBarberBanner(pathToBanner string) (*mongo.UpdateResult, error) {
+	// bannerUrl := fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathToBanner)
+	// coll := db.Client.Database("cutnow").Collection("Barbeiro")
+	// id, err := primitive.ObjectIDFromHex(db.HexId)
 
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil, err
-	}
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return nil, err
+	// }
 
-	filter := bson.D{{"_id", id}}
-	update := bson.D{{"$set", bson.D{{"informacoes.banner", bannerUrl}}}}
+	// filter := bson.D{{"_id", id}}
+	// update := bson.D{{"$set", bson.D{{"informacoes.banner", bannerUrl}}}}
 
-	result, err := coll.UpdateOne(context.TODO(), filter, update)
+	// result, err := coll.UpdateOne(context.TODO(), filter, update)
 
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil, err
-	}
-
-	return result, nil
-}
-
-func UpdateBarbershopBanner(client *mongo.Client, hexId string, pathToBanner string) (*mongo.UpdateResult, error) {
-	bannerUrl := fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathToBanner)
-
-	coll := client.Database("cutnow").Collection("Barbearia")
-	id, err := primitive.ObjectIDFromHex(hexId)
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil, err
-	}
-
-	filter := bson.D{{"_id", id}}
-	update := bson.D{{"$set", bson.D{{"informacoes.fotoBanner", bannerUrl}}}}
-	result, err := coll.UpdateOne(context.TODO(), filter, update)
+	result, err := db.handleAndUpdateData(pathToBanner, "Barbeiro", "informacoes.banner")
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -79,44 +86,21 @@ func UpdateBarbershopBanner(client *mongo.Client, hexId string, pathToBanner str
 	return result, nil
 }
 
-func UpdateBarberFoto(client *mongo.Client, hexId string, pathToFoto string) (*mongo.UpdateResult, error) {
-	fotoUrl := fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathToFoto)
-	coll := client.Database("cutnow").Collection("Barbeiro")
+func (db Database) UpdateBarbershopBanner(pathToBanner string) (*mongo.UpdateResult, error) {
+	// bannerUrl := fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathToBanner)
 
-	id, err := primitive.ObjectIDFromHex(hexId)
+	// coll := db.Client.Database("cutnow").Collection("Barbearia")
+	// id, err := primitive.ObjectIDFromHex(db.HexId)
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return nil, err
+	// }
 
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil, err
-	}
+	// filter := bson.D{{"_id", id}}
+	// update := bson.D{{"$set", bson.D{{"informacoes.fotoBanner", bannerUrl}}}}
+	// result, err := coll.UpdateOne(context.TODO(), filter, update)
 
-	filter := bson.D{{"_id", id}}
-	update := bson.D{{"$set", bson.D{{"informacoes.foto", fotoUrl}}}}
-
-	result, err := coll.UpdateOne(context.TODO(), filter, update)
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil, err
-	}
-
-	return result, nil
-}
-
-func UpdateBarbershopLogo(client *mongo.Client, hexId string, pathToLogo string) (*mongo.UpdateResult, error) {
-	logoUrl := fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathToLogo)
-	coll := client.Database("cutnow").Collection("Barbearia")
-	id, err := primitive.ObjectIDFromHex(hexId)
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil, err
-	}
-
-	filter := bson.D{{"_id", id}}
-	update := bson.D{{"$set", bson.D{{"informacoes.logo", logoUrl}}}}
-
-	result, err := coll.UpdateOne(context.TODO(), filter, update)
+	result, err := db.handleAndUpdateData(pathToBanner, "Barbearia", "informacoes.fotoBanner")
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -126,15 +110,66 @@ func UpdateBarbershopLogo(client *mongo.Client, hexId string, pathToLogo string)
 	return result, nil
 }
 
-func UpdateBarberPotfolio(client *mongo.Client, hexId string, pathToPortfolio []string) (*mongo.UpdateResult, error) {
+func (db Database) UpdateBarberFoto(pathToFoto string) (*mongo.UpdateResult, error) {
+	// fotoUrl := fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathToFoto)
+	// coll := db.Client.Database("cutnow").Collection("Barbeiro")
+
+	// id, err := primitive.ObjectIDFromHex(db.HexId)
+
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return nil, err
+	// }
+
+	// filter := bson.D{{"_id", id}}
+	// update := bson.D{{"$set", bson.D{{"informacoes.foto", fotoUrl}}}}
+
+	// result, err := coll.UpdateOne(context.TODO(), filter, update)
+
+	result, err := db.handleAndUpdateData(pathToFoto, "Barbeiro", "informacoes.foto")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (db Database) UpdateBarbershopLogo(pathToLogo string) (*mongo.UpdateResult, error) {
+	// logoUrl := fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathToLogo)
+	// coll := db.Client.Database("cutnow").Collection("Barbearia")
+	// id, err := primitive.ObjectIDFromHex(db.HexId)
+
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return nil, err
+	// }
+
+	// filter := bson.D{{"_id", id}}
+	// update := bson.D{{"$set", bson.D{{"informacoes.logo", logoUrl}}}}
+
+	// result, err := coll.UpdateOne(context.TODO(), filter, update)
+
+	result, err := db.handleAndUpdateData(pathToLogo, "Barbearia", "informacoes.logo")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (db Database) UpdateBarberPotfolio(pathToPortfolio []string) (*mongo.UpdateResult, error) {
 	var portfolioUrls []string
 
 	for _, pathPotfolio := range pathToPortfolio {
 		portfolioUrls = append(portfolioUrls, fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathPotfolio))
 	}
 
-	coll := client.Database("cutnow").Collection("Barbeiro")
-	id, err := primitive.ObjectIDFromHex(hexId)
+	coll := db.Client.Database("cutnow").Collection("Barbeiro")
+	id, err := primitive.ObjectIDFromHex(db.HexId)
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -154,15 +189,15 @@ func UpdateBarberPotfolio(client *mongo.Client, hexId string, pathToPortfolio []
 	return result, nil
 }
 
-func UpdateBarbershopStructure(client *mongo.Client, hexId string, pathToStructure []string) (*mongo.UpdateResult, error) {
+func (db Database) UpdateBarbershopStructure(pathToStructure []string) (*mongo.UpdateResult, error) {
 	var structureUrls []string
 
 	for _, pathStrucure := range pathToStructure {
 		structureUrls = append(structureUrls, fmt.Sprintf("https://deb5gzd2n1wd.cloudfront.net/%s", pathStrucure))
 	}
 
-	coll := client.Database("cutnow").Collection("Barbearia")
-	id, err := primitive.ObjectIDFromHex(hexId)
+	coll := db.Client.Database("cutnow").Collection("Barbearia")
+	id, err := primitive.ObjectIDFromHex(db.HexId)
 
 	if err != nil {
 		fmt.Println(err.Error())

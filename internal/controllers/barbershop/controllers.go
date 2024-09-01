@@ -11,12 +11,13 @@ import (
 )
 
 func BannerUpload(c echo.Context) error {
+	var database database_pkg.Database
 	id := c.FormValue("id")
 
 	if id == "" {
 		return c.JSON(http.StatusBadRequest, controller_response.Response{Status: false, Message: "Id é obrigatório !"})
 	}
-
+	database.HexId = id
 	file, err := c.FormFile("file")
 
 	if file.Size > int64(32897612) {
@@ -33,12 +34,13 @@ func BannerUpload(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado ao abrir o arquivo.", Error: err})
 	}
 	client := database_pkg.Connect()
-	defer database_pkg.Disconnect(client)
+	database.Client = client
+	defer database.Disconnect()
 
 	defer src.Close()
 	filePath := fmt.Sprintf("barbershop/%s/banner-%s", id, file.Filename)
 	aws_s3.UploadSingleFile("cutnow-images", filePath, src)
-	_, err = database_pkg.UpdateBarbershopBanner(client, id, filePath)
+	_, err = database.UpdateBarbershopBanner(filePath)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado ao inserir o arquivo no Banco de dados.", Error: err})
@@ -48,12 +50,13 @@ func BannerUpload(c echo.Context) error {
 }
 
 func LogoUpload(c echo.Context) error {
+	var database database_pkg.Database
 	id := c.FormValue("id")
 
 	if id == "" {
 		return c.JSON(http.StatusBadRequest, controller_response.Response{Status: false, Message: "Id é obrigatório !"})
 	}
-
+	database.HexId = id
 	file, err := c.FormFile("file")
 	if file.Size > int64(32897612) {
 		return c.JSON(http.StatusNotAcceptable, controller_response.Response{Status: false, Message: "A imagem deve ter menos de 32MB"})
@@ -70,12 +73,13 @@ func LogoUpload(c echo.Context) error {
 	defer src.Close()
 
 	client := database_pkg.Connect()
-	defer database_pkg.Disconnect(client)
+	database.Client = client
+	defer database.Disconnect()
 
 	filePath := fmt.Sprintf("barbershop/%s/logo-%s", id, file.Filename)
 	aws_s3.UploadSingleFile("cutnow-images", filePath, src)
 
-	_, err = database_pkg.UpdateBarbershopLogo(client, id, filePath)
+	_, err = database.UpdateBarbershopLogo(filePath)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado ao inserir o arquivo no Banco de dados.", Error: err})
@@ -85,12 +89,13 @@ func LogoUpload(c echo.Context) error {
 }
 
 func StructureUpload(c echo.Context) error {
+	var database database_pkg.Database
 	id := c.FormValue("id")
 
 	if id == "" {
 		return c.JSON(http.StatusBadRequest, controller_response.Response{Status: false, Message: "Id é obrigatório !"})
 	}
-
+	database.HexId = id
 	form, err := c.MultipartForm()
 
 	if err != nil {
@@ -102,7 +107,8 @@ func StructureUpload(c echo.Context) error {
 	}
 
 	client := database_pkg.Connect()
-	defer database_pkg.Disconnect(client)
+	database.Client = client
+	defer database.Disconnect()
 
 	var filepaths []string
 
@@ -127,7 +133,7 @@ func StructureUpload(c echo.Context) error {
 		go aws_s3.UploadMultipleFile("cutnow-images", filePath, src)
 	}
 
-	_, err = database_pkg.UpdateBarbershopStructure(client, id, filepaths)
+	_, err = database.UpdateBarbershopStructure(filepaths)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado ao inserir o arquivo no Banco de dados.", Error: err})
