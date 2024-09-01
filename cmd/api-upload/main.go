@@ -8,12 +8,12 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rafaapcode/upload-file-cutnow/internal/controllers/barbers"
 	"github.com/rafaapcode/upload-file-cutnow/internal/controllers/barbershop"
-	"github.com/rafaapcode/upload-file-cutnow/internal/middlewares"
 )
 
 func init() {
 	os.Setenv("PORT", ":3002")
 	os.Setenv("SECRET", "3d5af22c0142b5711b81dd51712d6454aa2e0870a5309128c0c77039b65fa94a")
+	os.Setenv("MONGODB_URI", "mongodb+srv://rafaapcode:dXNcr6y312hhPo6V@cutnow.ald8nke.mongodb.net/cutnow?retryWrites=true&w=majority&appName=CutNow")
 }
 
 func main() {
@@ -23,7 +23,7 @@ func main() {
 	}))
 	e.Use(middleware.Recover())
 
-	e.Use(middlewares.AuthMiddleware)
+	// e.Use(middlewares.AuthMiddleware)
 
 	e.GET("/",
 		func(c echo.Context) error {
