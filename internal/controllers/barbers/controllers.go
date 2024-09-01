@@ -3,7 +3,6 @@ package barbers
 import (
 	"fmt"
 	"net/http"
-	"sync"
 
 	"github.com/labstack/echo/v4"
 	aws_s3 "github.com/rafaapcode/upload-file-cutnow/pkg/aws"
@@ -64,7 +63,6 @@ func FotoUpload(c echo.Context) error {
 }
 
 func PortfolioUpload(c echo.Context) error {
-	var wg *sync.WaitGroup
 	id := c.FormValue("id")
 
 	if id == "" {
@@ -77,10 +75,9 @@ func PortfolioUpload(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Algo deu errado , tente novamente.", Error: err})
 	}
 
-	files := form.File["files"]
+	for _, fileheaders := range form.File {
+		file := fileheaders[0]
 
-	wg.Add(len(files))
-	for _, file := range files {
 		if file.Size > int64(32897612) {
 			return c.JSON(http.StatusNotAcceptable, controller_response.Response{Status: false, Message: "A imagem deve ter menos de 32MB"})
 		}
@@ -90,10 +87,9 @@ func PortfolioUpload(c echo.Context) error {
 		}
 
 		defer src.Close()
-		filePath := fmt.Sprintf("barbershop/%s/banner-%s", id, file.Filename)
-		aws_s3.UploadMultipleFile("cutnow-images", filePath, src)
+		filePath := fmt.Sprintf("barber/%s/potfolio-%s", id, file.Filename)
+		go aws_s3.UploadMultipleFile("cutnow-images", filePath, src)
 	}
-	wg.Wait()
 
 	return c.JSON(http.StatusCreated, controller_response.Response{Status: true, Message: "Portfolio photos uploaded with Successful !", Error: nil})
 }
