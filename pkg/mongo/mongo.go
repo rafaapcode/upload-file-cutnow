@@ -216,3 +216,52 @@ func (db Database) UpdateBarbershopStructure(pathToStructure []string) (*mongo.U
 
 	return result, nil
 }
+
+func (db Database) DeleteStructureImages(index int) (*mongo.UpdateResult, error) {
+	coll := db.Client.Database("cutnow").Collection("Barbearia")
+	id, err := primitive.ObjectIDFromHex(db.HexId)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	filter := bson.D{{"_id", id}}
+	var results bson.M
+	err = coll.FindOne(context.TODO(), filter).Decode(&results)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	informacoes, ok := results["informacoes"].(bson.M)
+	fotosEstruturaBarbearia, ok := informacoes["fotosEstruturaBarbearia"].(bson.A)
+
+	if !ok {
+		return nil, fmt.Errorf("Erro ao acessar as imagens")
+	}
+
+	if index > len(fotosEstruturaBarbearia) {
+		return nil, fmt.Errorf("Indice não existe")
+	}
+
+	var newImages []string
+
+	for key, val := range fotosEstruturaBarbearia {
+		urlImg := val.(string)
+		if key != index {
+			newImages = append(newImages, urlImg)
+		}
+	}
+	update := bson.D{{"$set", bson.D{{"informacoes.fotosEstruturaBarbearia", newImages}}}}
+
+	resultUpdate, err := coll.UpdateOne(context.TODO(), filter, update)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	return resultUpdate, nil
+}

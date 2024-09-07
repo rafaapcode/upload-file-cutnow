@@ -8,7 +8,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rafaapcode/upload-file-cutnow/internal/controllers/barbers"
 	"github.com/rafaapcode/upload-file-cutnow/internal/controllers/barbershop"
-	"github.com/rafaapcode/upload-file-cutnow/internal/middlewares"
 )
 
 func init() {
@@ -24,7 +23,7 @@ func main() {
 	}))
 	e.Use(middleware.Recover())
 
-	e.Use(middlewares.AuthMiddleware)
+	// e.Use(middlewares.AuthMiddleware)
 
 	e.GET("/",
 		func(c echo.Context) error {
@@ -34,6 +33,7 @@ func main() {
 	e.POST("/barbershop/logo", barbershop.LogoUpload)
 	e.POST("/barbershop/banner", barbershop.BannerUpload)
 	e.POST("/barbershop/structure", barbershop.StructureUpload)
+	e.DELETE("/barbershop/structure/:index/:id", barbershop.DeleteStructImage)
 
 	e.POST("/barber/foto", barbers.FotoUpload)
 	e.POST("/barber/banner", barbers.BannerUpload)

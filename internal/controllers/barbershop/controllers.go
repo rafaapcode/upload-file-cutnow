@@ -3,6 +3,7 @@ package barbershop
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	aws_s3 "github.com/rafaapcode/upload-file-cutnow/pkg/aws"
@@ -140,4 +141,25 @@ func StructureUpload(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, controller_response.Response{Status: true, Message: "Structure photos uploaded with Successful!", Error: nil})
+}
+
+func DeleteStructImage(c echo.Context) error {
+	var database database_pkg.Database
+	index, err := strconv.Atoi(c.Param("index"))
+	id := c.Param("id")
+	if err != nil || id == "" {
+		return c.JSON(http.StatusBadRequest, controller_response.Response{Status: false, Message: "Index eo o ID são obrigatórios"})
+	}
+
+	database.HexId = id
+	client := database_pkg.Connect()
+	database.Client = client
+
+	_, err = database.DeleteStructureImages(index)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Erro ao deletar a imagem", Error: nil})
+	}
+
+	return c.JSON(http.StatusOK, controller_response.Response{Status: true, Message: "Foto excluída com sucesso", Error: nil})
 }
