@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -217,13 +218,13 @@ func (db Database) UpdateBarbershopStructure(pathToStructure []string) (*mongo.U
 	return result, nil
 }
 
-func (db Database) DeleteStructureImages(index int) (*mongo.UpdateResult, error) {
+func (db Database) DeleteStructureImages(index int) (string, error) {
 	coll := db.Client.Database("cutnow").Collection("Barbearia")
 	id, err := primitive.ObjectIDFromHex(db.HexId)
 
 	if err != nil {
 		fmt.Println(err.Error())
-		return nil, err
+		return "", err
 	}
 
 	filter := bson.D{{"_id", id}}
@@ -232,36 +233,40 @@ func (db Database) DeleteStructureImages(index int) (*mongo.UpdateResult, error)
 
 	if err != nil {
 		fmt.Println(err.Error())
-		return nil, err
+		return "", err
 	}
 
 	informacoes, ok := results["informacoes"].(bson.M)
 	fotosEstruturaBarbearia, ok := informacoes["fotosEstruturaBarbearia"].(bson.A)
 
 	if !ok {
-		return nil, fmt.Errorf("Erro ao acessar as imagens")
+		return "", fmt.Errorf("Erro ao acessar as imagens")
 	}
 
 	if index > len(fotosEstruturaBarbearia) {
-		return nil, fmt.Errorf("Indice não existe")
+		return "", fmt.Errorf("Indice não existe")
 	}
 
 	var newImages []string
+	var deletedImages string
 
 	for key, val := range fotosEstruturaBarbearia {
 		urlImg := val.(string)
 		if key != index {
 			newImages = append(newImages, urlImg)
+		} else {
+			pathToS3Object := strings.SplitAfterN(urlImg, "/", 4)
+			deletedImages = pathToS3Object[3]
 		}
 	}
 	update := bson.D{{"$set", bson.D{{"informacoes.fotosEstruturaBarbearia", newImages}}}}
 
-	resultUpdate, err := coll.UpdateOne(context.TODO(), filter, update)
+	_, err = coll.UpdateOne(context.TODO(), filter, update)
 
 	if err != nil {
 		fmt.Println(err.Error())
-		return nil, err
+		return "", err
 	}
 
-	return resultUpdate, nil
+	return deletedImages, nil
 }

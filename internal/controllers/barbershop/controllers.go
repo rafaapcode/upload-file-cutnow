@@ -143,6 +143,18 @@ func StructureUpload(c echo.Context) error {
 	return c.JSON(http.StatusCreated, controller_response.Response{Status: true, Message: "Structure photos uploaded with Successful!", Error: nil})
 }
 
+func handleS3DeleteObjects(deletedImg string) func() {
+	return func() {
+		err := aws_s3.DeleteMultipleImages("cutnow-images", deletedImg)
+
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+
+		fmt.Println("Imagens excluídas com sucesso !")
+	}
+}
+
 func DeleteStructImage(c echo.Context) error {
 	var database database_pkg.Database
 	index, err := strconv.Atoi(c.Param("index"))
@@ -155,11 +167,13 @@ func DeleteStructImage(c echo.Context) error {
 	client := database_pkg.Connect()
 	database.Client = client
 
-	_, err = database.DeleteStructureImages(index)
+	deletedImages, err := database.DeleteStructureImages(index)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Erro ao deletar a imagem", Error: nil})
 	}
+
+	c.Response().After(handleS3DeleteObjects(deletedImages))
 
 	return c.JSON(http.StatusOK, controller_response.Response{Status: true, Message: "Foto excluída com sucesso", Error: nil})
 }
