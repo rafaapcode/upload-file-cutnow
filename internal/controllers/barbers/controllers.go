@@ -3,6 +3,7 @@ package barbers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	aws_s3 "github.com/rafaapcode/upload-file-cutnow/pkg/aws"
@@ -139,4 +140,39 @@ func PortfolioUpload(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, controller_response.Response{Status: true, Message: "Portfolio photos uploaded with Successful !", Error: nil})
+}
+
+func handleS3DeleteObjects(deletedImg string) func() {
+	return func() {
+		err := aws_s3.DeleteMultipleImages("cutnow-images", deletedImg)
+
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+
+		fmt.Println("Imagens excluídas com sucesso !")
+	}
+}
+
+func DeletePortfolioImage(c echo.Context) error {
+	var database database_pkg.Database
+	index, err := strconv.Atoi(c.Param("index"))
+	id := c.Param("id")
+	if err != nil || id == "" {
+		return c.JSON(http.StatusBadRequest, controller_response.Response{Status: false, Message: "Index eo o ID são obrigatórios"})
+	}
+
+	database.HexId = id
+	client := database_pkg.Connect()
+	database.Client = client
+
+	deletedImages, err := database.DeletePortfolioImages(index)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, controller_response.Response{Status: false, Message: "Erro ao deletar a imagem", Error: nil})
+	}
+
+	c.Response().After(handleS3DeleteObjects(deletedImages))
+
+	return c.JSON(http.StatusOK, controller_response.Response{Status: true, Message: "Foto excluída com sucesso", Error: nil})
 }

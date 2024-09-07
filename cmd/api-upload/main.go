@@ -38,6 +38,7 @@ func main() {
 	e.POST("/barber/foto", barbers.FotoUpload)
 	e.POST("/barber/banner", barbers.BannerUpload)
 	e.POST("/barber/portfolio", barbers.PortfolioUpload)
+	e.DELETE("/barber/portfolio/:index/:id", barbers.DeletePortfolioImage)
 
 	e.Logger.Fatal(e.Start(os.Getenv("PORT")))
 }

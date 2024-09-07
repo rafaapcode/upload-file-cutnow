@@ -270,3 +270,57 @@ func (db Database) DeleteStructureImages(index int) (string, error) {
 
 	return deletedImages, nil
 }
+
+func (db Database) DeletePortfolioImages(index int) (string, error) {
+	coll := db.Client.Database("cutnow").Collection("Barbeiro")
+	id, err := primitive.ObjectIDFromHex(db.HexId)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return "", err
+	}
+
+	filter := bson.D{{"_id", id}}
+	var results bson.M
+	err = coll.FindOne(context.TODO(), filter).Decode(&results)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return "", err
+	}
+
+	informacoes, ok := results["informacoes"].(bson.M)
+	fotosPortfolioBarbeiro, ok := informacoes["portfolio"].(bson.A)
+
+	if !ok {
+		return "", fmt.Errorf("Erro ao acessar as imagens")
+	}
+
+	if index > len(fotosPortfolioBarbeiro) {
+		return "", fmt.Errorf("Indice não existe")
+	}
+
+	var newImages []string
+	var deletedImages string
+
+	for key, val := range fotosPortfolioBarbeiro {
+		urlImg := val.(string)
+		if key != index {
+			newImages = append(newImages, urlImg)
+		} else {
+			pathToS3Object := strings.SplitAfterN(urlImg, "/", 4)
+			deletedImages = pathToS3Object[3]
+		}
+	}
+
+	update := bson.D{{"$set", bson.D{{"informacoes.portfolio", newImages}}}}
+
+	_, err = coll.UpdateOne(context.TODO(), filter, update)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return "", err
+	}
+
+	return deletedImages, nil
+}
