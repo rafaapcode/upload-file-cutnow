@@ -178,6 +178,36 @@ func (db Database) UpdateBarberPotfolio(pathToPortfolio []string) (*mongo.Update
 	}
 
 	filter := bson.D{{"_id", id}}
+
+	var results bson.M
+	err = coll.FindOne(context.TODO(), filter).Decode(&results)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	informacoes, ok := results["informacoes"].(bson.M)
+	if !ok {
+		return nil, fmt.Errorf("Erro ao acessar as imagens")
+	}
+	fotosportfolio, ok := informacoes["portfolio"].(bson.A)
+	var urlAlreadyInDB []string
+	if ok {
+		for _, val := range fotosportfolio {
+			urlImg := val.(string)
+			urlAlreadyInDB = append(urlAlreadyInDB, urlImg)
+		}
+	}
+
+	if len(urlAlreadyInDB) > 15 {
+		return nil, fmt.Errorf("Você pode ter no máximo 15 imagens.")
+	}
+
+	if len(urlAlreadyInDB) > 0 {
+		portfolioUrls = append(portfolioUrls, urlAlreadyInDB...)
+	}
+
 	update := bson.D{{"$set", bson.D{{"informacoes.portfolio", portfolioUrls}}}}
 
 	result, err := coll.UpdateOne(context.TODO(), filter, update)
@@ -206,6 +236,36 @@ func (db Database) UpdateBarbershopStructure(pathToStructure []string) (*mongo.U
 	}
 
 	filter := bson.D{{"_id", id}}
+
+	var results bson.M
+	err = coll.FindOne(context.TODO(), filter).Decode(&results)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	informacoes, ok := results["informacoes"].(bson.M)
+	if !ok {
+		return nil, fmt.Errorf("Erro ao acessar as imagens")
+	}
+	fotosEstruturaBarbearia, ok := informacoes["fotosEstruturaBarbearia"].(bson.A)
+	var urlAlreadyInDB []string
+	if ok {
+		for _, val := range fotosEstruturaBarbearia {
+			urlImg := val.(string)
+			urlAlreadyInDB = append(urlAlreadyInDB, urlImg)
+		}
+	}
+
+	if len(urlAlreadyInDB) > 6 {
+		return nil, fmt.Errorf("Você pode ter no máximo 6 imagens.")
+	}
+
+	if len(urlAlreadyInDB) > 0 {
+		structureUrls = append(structureUrls, urlAlreadyInDB...)
+	}
+
 	update := bson.D{{"$set", bson.D{{"informacoes.fotosEstruturaBarbearia", structureUrls}}}}
 
 	result, err := coll.UpdateOne(context.TODO(), filter, update)

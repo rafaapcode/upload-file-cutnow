@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -15,7 +14,6 @@ type Response struct {
 func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		authHeader := c.Request().Header.Get("authorization")
-		fmt.Println(authHeader)
 		if authHeader == "" {
 			return c.JSON(http.StatusUnauthorized, Response{Message: "Authorization header is required"})
 		}
